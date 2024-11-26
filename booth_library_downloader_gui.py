@@ -120,6 +120,7 @@ class BoothUser:
     """
     def __init__(self, cookie_path):
         self.library = "https://accounts.booth.pm/library"
+        self.gifts = "https://accounts.booth.pm/library/gifts"
         self.cookie = cookies_from_file(cookie_path)
         self.session = requests.Session()
         self.session.cookies = self.cookie
@@ -163,15 +164,24 @@ class BoothUser:
     
     def get_all_products(self) -> list[Product]:
         all_products = []
-        last_page = self.get_last_page()
+        last_page = self.get_last_page(self.library)
         for i in range(1, last_page + 1):
             print(f"loading page {i}/{last_page}")
             all_products += self.get_products_from_page(f"{self.library}?page={i}")
+        
+        last_page_gifts = self.get_last_page(self.gifts)
+        for i in range(1, last_page_gifts + 1):
+            print(f"loading gifts page {i}/{last_page_gifts}")
+            all_products += self.get_products_from_page(f"{self.gifts}?page={i}")
+
         return all_products
     
-    def get_last_page(self):
-        soup = self.get_page(self.library)
-        return int(soup.select_one("a.last-page")["href"].split("=")[-1])
+    def get_last_page(self, url: str):
+        soup = self.get_page(url)
+        last_page = soup.select_one("a.last-page")
+        if last_page is None:
+            return 1
+        return int(last_page["href"].split("=")[-1])
     
     def get_username(self) -> str:
         soup = self.get_page("https://booth.pm/")
