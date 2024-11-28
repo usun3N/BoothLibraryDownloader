@@ -185,7 +185,7 @@ class BoothUser:
     
     def get_username(self) -> str:
         soup = self.get_page("https://booth.pm/")
-        username = soup.select_one("b.global-nav-nickname").text
+        username = soup.select_one("div.user-pulldown > div.flex > span > b").text
         return username
     
 
