@@ -57,6 +57,7 @@ class Product:
             filename = os.path.basename(res.url.split("?")[0])
             with open(f"{dl_path}\\temp\\{filename}", "wb") as f:
                 f.write(res.content)
+            del res
             img = Image.open(f"{dl_path}\\temp\\{filename}")
             img.save(f"{dl_path}\\temp\\{self.name}.png", format="PNG")
             img.close()
@@ -96,6 +97,7 @@ class Product:
                 name = os.path.basename(res.url.split("?")[0])
                 with open(f"{dl_path}\\{self.name}\\{name}", "wb") as f:
                     f.write(res.content)
+                del res
                 if name.endswith(".zip"):
                     shutil.unpack_archive(f"{dl_path}\\{self.name}\\{name}", f"{dl_path}\\{self.name}")
                     os.remove(f"{dl_path}\\{self.name}\\{name}")
@@ -193,35 +195,39 @@ booth_user = None
 
 class ProductPage:
     def __init__(self, products: list[Product]):
+        self.images = [None for _ in range(12)]
         self.products = products
         self.max_page = len(self.products) // 12
-        self.product_layout = []
-        product_list = [self.get_product_layout(product, i) for i, product in enumerate(self.products)]
+        product_list = [self.get_product_layout(product, i) for i, product in enumerate(self.products[:12])]
+        self.page_layout = []
         while product_list:
-            page_list = product_list[:12]
-            product_list = product_list[12:]
-            page_layout = []
-            while page_list:
-                page_layout.append(page_list[:4])
-                page_list = page_list[4:]
-            self.product_layout.append(page_layout)
+            self.page_layout.append(product_list[:4])
+            product_list = product_list[4:]
 
     def get_product_layout(self, product:Product, i:int):
-        response = eg.Frame("", [[eg.Image(Image.open(f"{dl_path}\\temp\\{product.name}.png"), size=(150, 150), key=f"image_{i}")], [eg.Text(product.name, wrap_length=150, key=f"title_{i}")], [eg.Button("Download", key=f"download_{i}")]])
+        print(i)
+        self.images[i] = Image.open(f"{dl_path}\\temp\\{product.name}.png")
+        response = eg.Frame("", 
+                            [[eg.Image(self.images[i], size=(150, 150), key=f"image_{i}")], 
+                             [eg.Text(product.name, wrap_length=150, key=f"title_{i}")], 
+                             [eg.Button("Download", key=f"download_{i}")]],
+                             size=(150, 300))
         return response
     
     def edit(self, i: int, image_path: str, title: str, window):
-        window[f"image_{i}"].update(Image.open(image_path))
+        if isinstance(self.images[i], Image.Image):
+            self.images[i].close()
+        self.images[i] = Image.open(image_path)
+        window[f"image_{i}"].update(self.images[i])
         window[f"title_{i}"].update(title)
 
     def change_page(self, page: int, window):
         for i, product in enumerate(self.products[page * 12: (page + 1) * 12]):
             self.edit(i, f"{dl_path}\\temp\\{product.name}.png", product.name, window)
     
-    def get_page(self, page: int) -> list[eg.Frame]:
-        if page <= self.max_page:
-            return self.product_layout[page]
-
+    def get_page_layout(self, page: int) -> list[list]:
+        return self.page_layout[page]
+    
     def has_next(self, page: int) -> bool:
         return page < self.max_page
     
@@ -289,7 +295,7 @@ def main_window():
     product_page = ProductPage(booth_user.library_products)
     page = 0
     layout = [[eg.Text("Booth Library Downloader", font=("Arial", 20))],
-            [eg.Frame("Products", product_page.get_page(page), key="products_key"),
+            [eg.Frame("Products", product_page.page_layout, key="products_key"),
              eg.Column([[eg.Button("Back", key="back", disabled=True)], [eg.Button("Next", key="next")], [eg.Button("Download All", key="download_all")]])
             ]]
     main_window = eg.Window("Booth Library Downloader", layout,size=(800, 850))
