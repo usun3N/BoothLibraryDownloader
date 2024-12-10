@@ -9,7 +9,6 @@ import shutil
 import TkEasyGUI as eg
 import re
 
-url = "https://accounts.booth.pm/library"
 cookie_path = ""
 dl_path = ""
 
