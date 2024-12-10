@@ -221,8 +221,15 @@ class ProductPage:
         window[f"title_{i}"].update(title)
 
     def change_page(self, page: int, window):
-        for i, product in enumerate(self.products[page * 12: (page + 1) * 12]):
-            self.edit(i, f"{dl_path}\\temp\\{product.name}.png", product.name, window)
+        products = self.products[page * 12: (page + 1) * 12]
+        count = len(products)
+        for i in range(12):
+            if i < count:
+                product = products[i]
+                self.edit(i, f"{dl_path}\\temp\\{product.name}.png", product.name, window)
+            else:
+                self.edit(i, f"{dl_path}\\temp\\empty.png", "", window)
+                window[f"download_{i}"].update(disabled=True)
     
     def get_page_layout(self, page: int) -> list[list]:
         return self.page_layout[page]
@@ -285,6 +292,11 @@ def login_window():
         else:
             sb = False
         login_window["start_button"].update(disabled=sb)
+    if not os.path.exists(f"{dl_path}\\temp"):
+        os.makedirs(f"{dl_path}\\temp")
+    img = Image.new("RGB", (1, 1), (255, 255, 255))
+    img.save(f"{dl_path}\\temp\\empty.png")
+    img.close()
     login_window.close()
 
 def main_window():
