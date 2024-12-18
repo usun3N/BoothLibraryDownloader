@@ -1,11 +1,22 @@
-if exist ".venv"(
-    echo "venv already exists"
-    exit
-)
-echo %PATH% | findstr "python" > NUL
-if not ERRORLEVEL == 1(
-    python -m venv .venv
-    "./.venv/Scripts/python.exe" -m pip install -r requirements.txt
-) else(
-    echo "please install python first"
-)
+@echo off
+if exist ".venv\" goto AlreadyExist
+echo %PATH% | findstr "Python" > NUL
+if %errorlevel%==1 goto NoPython
+echo "making venv..."
+python -m venv .venv
+echo "downloading requirements..."
+"./.venv/Scripts/python.exe" -m pip install -r requirements.txt
+echo "Finish"
+goto end
+
+:AlreadyExist
+echo "venv is already exist"
+goto end
+
+:NoPython
+echo "please install python first"
+goto end
+
+:end
+pause
+exit
